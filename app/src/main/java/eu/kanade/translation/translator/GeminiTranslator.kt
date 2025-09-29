@@ -87,7 +87,14 @@ class GeminiTranslator(
             val data = pages.mapValues { (k, v) -> v.blocks.map { b -> b.text } }
             val json = JSONObject(data)
             val response = model.generateContent(json.toString())
-            val resJson = JSONObject("${response.text}")
+            if (response.text == null) {
+                for ((_, v) in pages) {
+                    v.blocks.forEach { b -> b.translation = b.text }
+                }
+                return
+            }
+            val resJson =
+                JSONObject(response.text!!.replace("```json", "").replace("```", ""))
             for ((k, v) in pages) {
                 v.blocks.forEachIndexed { i, b ->
                     run {
@@ -96,7 +103,7 @@ class GeminiTranslator(
                     }
                 }
                 v.blocks =
-                    v.blocks.filterNot { it.translation.contains("RTMTH") }.toMutableList()
+                    v.blocks.filterNot { it.translation.contains("RTMTH") || it.translation.isBlank() }.toMutableList()
             }
         } catch (e: Exception) {
             logcat { "Image Translation Error : ${e.stackTraceToString()}" }
