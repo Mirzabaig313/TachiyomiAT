@@ -87,7 +87,12 @@ class GeminiTranslator(
             val data = pages.mapValues { (k, v) -> v.blocks.map { b -> b.text } }
             val json = JSONObject(data)
             val response = model.generateContent(json.toString())
-            val resJson = JSONObject("${response.text}")
+            val resJson = JSONObject(
+                "${response.text}".let {
+                    it.substringAfter("```json\n", it)
+                        .substringBeforeLast("\n```")
+                },
+            )
             for ((k, v) in pages) {
                 v.blocks.forEachIndexed { i, b ->
                     run {
